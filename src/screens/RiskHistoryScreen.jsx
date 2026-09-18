@@ -3,7 +3,7 @@ import { Clock, AlertTriangle, ShieldCheck, ChevronRight, Filter, AlertCircle } 
 import { Header } from "../components/Header";
 import { RiskBadge } from "../components/RiskBadge";
 
-export function RiskHistoryScreen({ scans = [], onSelectScan, onSettings }) {
+export function RiskHistoryScreen({ scans = [], onSelectScan, onSettings, onBack }) {
   const [filter, setFilter] = useState("ALL");
 
   const filteredScans = scans.filter((scan) => {
@@ -30,6 +30,8 @@ export function RiskHistoryScreen({ scans = [], onSelectScan, onSettings }) {
         title="Risk History"
         subtitle="Chronological safety log & audit trail"
         onSettings={onSettings}
+        onBack={onBack}
+        showBack={Boolean(onBack)}
       />
 
       <div className="screen-content" style={{ flex: 1 }}>

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { ArrowLeft, Zap, QrCode, Image as ImageIcon, User, Check, ShieldCheck } from "lucide-react";
+import { Zap, QrCode, Image as ImageIcon, User, Check, ShieldCheck } from "lucide-react";
+import { Header } from "../components/Header";
 
 export function ScanAndPayScreen({ onBack, onSelectRecipient }) {
   const [isScanning, setIsScanning] = useState(false);
@@ -30,60 +31,14 @@ export function ScanAndPayScreen({ onBack, onSelectRecipient }) {
         overflowY: "auto",
       }}
     >
-      {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "16px 20px",
-          borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
-        }}
-      >
-        <button
-          onClick={onBack}
-          style={{
-            width: "36px",
-            height: "36px",
-            borderRadius: "50%",
-            background: "rgba(255, 255, 255, 0.1)",
-            border: "none",
-            color: "#FFFFFF",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-          }}
-        >
-          <ArrowLeft size={18} />
-        </button>
-
-        <div style={{ textAlign: "center" }}>
-          <h2 style={{ fontFamily: "var(--font-display)", fontSize: "16px", fontWeight: "700" }}>
-            Scan & Pay
-          </h2>
-          <span style={{ fontSize: "10px", color: "#06B6D4", letterSpacing: "0.5px" }}>
-            Secure • Fast • UPI
-          </span>
-        </div>
-
-        <button
-          style={{
-            width: "36px",
-            height: "36px",
-            borderRadius: "50%",
-            background: "rgba(255, 255, 255, 0.1)",
-            border: "none",
-            color: "#FFFFFF",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-          }}
-        >
-          <ImageIcon size={17} />
-        </button>
-      </div>
+      {/* Unified Consistent Header */}
+      <Header
+        title="Scan & Pay"
+        subtitle="Secure • Fast • UPI"
+        showBack={true}
+        onBack={onBack}
+        dark={true}
+      />
 
       <div style={{ padding: "20px", display: "flex", flexDirection: "column", alignItems: "center", gap: "20px" }}>
         {/* QR Scanner Viewfinder with Neon Cyan Corners */}

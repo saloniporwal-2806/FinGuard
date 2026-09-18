@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { ArrowLeft, ChevronRight, Sparkles, BookOpen, ShieldCheck, Smartphone, Globe, CreditCard, PieChart } from "lucide-react";
+import { Header } from "../components/Header";
 import { LITERACY_TOPICS } from "../data/literacyTopics";
 
 export function LearnHubScreen({ onSelectTopic, onBack, onNavigate }) {
@@ -48,33 +49,12 @@ export function LearnHubScreen({ onSelectTopic, onBack, onNavigate }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-      {/* Header matching Mockup Screen 4 */}
-      <div style={{ padding: "16px 20px 8px 20px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          {onBack && (
-            <button
-              onClick={onBack}
-              style={{
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                padding: "2px",
-                display: "flex",
-              }}
-            >
-              <ArrowLeft size={18} color="#0F172A" />
-            </button>
-          )}
-          <div>
-            <h2 style={{ fontFamily: "var(--font-display)", fontSize: "17px", fontWeight: "800", color: "#0F172A" }}>
-              Learn & Protect
-            </h2>
-            <p style={{ fontSize: "11px", color: "#64748B" }}>
-              Knowledge today. Security tomorrow.
-            </p>
-          </div>
-        </div>
-      </div>
+      <Header
+        title="Learn & Protect"
+        subtitle="Knowledge today. Security tomorrow."
+        showBack={Boolean(onBack)}
+        onBack={onBack}
+      />
 
       <div className="screen-content" style={{ flex: 1, paddingBottom: "80px" }}>
         {/* Hero Card matching Mockup */}

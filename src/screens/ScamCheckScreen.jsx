@@ -1,5 +1,6 @@
 import React from "react";
-import { ArrowLeft, AlertTriangle, CheckCircle2, ShieldAlert, Share2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ShieldAlert, Share2 } from "lucide-react";
+import { Header } from "../components/Header";
 
 export function ScamCheckScreen({ scanData, onBack, onReport }) {
   const messageText =
@@ -26,34 +27,13 @@ export function ScamCheckScreen({ scanData, onBack, onReport }) {
         overflowY: "auto",
       }}
     >
-      {/* Header matching Mockup Screen 6 */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "12px",
-          padding: "16px 20px",
-          background: "#FFFFFF",
-          borderBottom: "1px solid #E2E8F0",
-        }}
-      >
-        <button
-          onClick={onBack}
-          style={{
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            padding: 0,
-            display: "flex",
-            color: "#0F172A",
-          }}
-        >
-          <ArrowLeft size={18} />
-        </button>
-        <h2 style={{ fontFamily: "var(--font-display)", fontSize: "16px", fontWeight: "800", color: "#0F172A" }}>
-          Scam Check
-        </h2>
-      </div>
+      {/* Standardized Consistent Header */}
+      <Header
+        title="Scam Check"
+        subtitle="AI Threat Analysis & Guidance"
+        showBack={true}
+        onBack={onBack}
+      />
 
       <div className="screen-content" style={{ flex: 1, padding: "18px" }}>
         {/* Quoted Message Card matching Mockup */}

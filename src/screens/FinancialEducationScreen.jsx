@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { ArrowLeft, Search, ChevronRight, Smartphone, CreditCard, Percent, PiggyBank, TrendingUp, BookOpen } from "lucide-react";
+import { Search, ChevronRight, Smartphone, CreditCard, Percent, PiggyBank, TrendingUp, BookOpen } from "lucide-react";
+import { Header } from "../components/Header";
 import { LITERACY_TOPICS } from "../data/literacyTopics";
 
 export function FinancialEducationScreen({ onSelectTopic, onBack }) {
@@ -38,26 +39,28 @@ export function FinancialEducationScreen({ onSelectTopic, onBack }) {
     },
     {
       id: "budgeting",
-      title: "How to Save Money Effectively",
-      time: "8 min",
+      title: "50/30/20 Rule",
+      time: "4 min",
       level: "Beginner",
       icon: PiggyBank,
-      color: "#A855F7",
-      bgColor: "#FAF5FF",
+      color: "#3B82F6",
+      bgColor: "#EFF6FF",
     },
     {
       id: "investment-awareness",
-      title: "Basics of Mutual Funds",
-      time: "7 min",
-      level: "Intermediate",
+      title: "Mutual Funds for Beginners",
+      time: "8 min",
+      level: "Advanced",
       icon: TrendingUp,
-      color: "#4F46E5",
-      bgColor: "#EEF2FF",
+      color: "#8B5CF6",
+      bgColor: "#F5F3FF",
     },
   ];
 
-  const filtered = educationModules.filter((m) => {
-    const matchesSearch = m.title.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredModules = educationModules.filter((m) => {
+    const matchesSearch =
+      m.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      m.level.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesSearch;
   });
 
@@ -72,34 +75,13 @@ export function FinancialEducationScreen({ onSelectTopic, onBack }) {
         overflowY: "auto",
       }}
     >
-      {/* Header matching Mockup Screen 7 */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "12px",
-          padding: "16px 20px",
-          background: "#FFFFFF",
-          borderBottom: "1px solid #E2E8F0",
-        }}
-      >
-        <button
-          onClick={onBack}
-          style={{
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            padding: 0,
-            display: "flex",
-            color: "#0F172A",
-          }}
-        >
-          <ArrowLeft size={18} />
-        </button>
-        <h2 style={{ fontFamily: "var(--font-display)", fontSize: "16px", fontWeight: "800", color: "#0F172A" }}>
-          Financial Education
-        </h2>
-      </div>
+      {/* Standardized Consistent Header */}
+      <Header
+        title="Financial Education"
+        subtitle="Curated Lessons & Risk Awareness"
+        showBack={true}
+        onBack={onBack}
+      />
 
       <div className="screen-content" style={{ flex: 1, padding: "16px 18px" }}>
         {/* Search Bar */}

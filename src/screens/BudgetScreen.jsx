@@ -3,16 +3,15 @@ import { ArrowLeft, Utensils, Plane, ShoppingBag, Film, MoreHorizontal, Plus } f
 
 export function BudgetScreen({ onBack, onSetBudget }) {
   const totalBudget = 15000;
-  const spentAmount = 8250;
-  const remainingAmount = 6750;
-  const usedPercentage = 55;
+  const spentAmount = 9420;
+  const remainingAmount = totalBudget - spentAmount;
+  const spentPct = Math.round((spentAmount / totalBudget) * 100);
 
   const categories = [
-    { name: "Food & Dining", pct: "35%", amount: "₹ 2,890", icon: Utensils, color: "#EC4899", bg: "#FDF2F8" },
-    { name: "Travel", pct: "20%", amount: "₹ 1,650", icon: Plane, color: "#8B5CF6", bg: "#F5F3FF" },
-    { name: "Shopping", pct: "15%", amount: "₹ 1,240", icon: ShoppingBag, color: "#F59E0B", bg: "#FFFBEB" },
-    { name: "Entertainment", pct: "10%", amount: "₹ 825", icon: Film, color: "#06B6D4", bg: "#ECFEFF" },
-    { name: "Others", pct: "20%", amount: "₹ 1,645", icon: MoreHorizontal, color: "#4F46E5", bg: "#EEF2FF" },
+    { name: "Food & Dining", spent: 4200, total: 6000, color: "#4F46E5", icon: Utensils },
+    { name: "Travel & Fuel", spent: 2150, total: 3500, color: "#06B6D4", icon: Plane },
+    { name: "Shopping", spent: 1870, total: 3000, color: "#A855F7", icon: ShoppingBag },
+    { name: "Entertainment", spent: 1200, total: 2500, color: "#F472B6", icon: Film },
   ];
 
   // SVG Donut metrics
@@ -20,7 +19,7 @@ export function BudgetScreen({ onBack, onSetBudget }) {
   const strokeWidth = 14;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (usedPercentage / 100) * circumference;
+  const strokeDashoffset = circumference - (spentPct / 100) * circumference;
 
   return (
     <div
@@ -33,43 +32,13 @@ export function BudgetScreen({ onBack, onSetBudget }) {
         overflowY: "auto",
       }}
     >
-      {/* Header matching Mockup Screen 9 */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "16px 20px",
-          background: "#FFFFFF",
-          borderBottom: "1px solid #E2E8F0",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          {onBack && (
-            <button
-              onClick={onBack}
-              style={{
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                padding: 0,
-                display: "flex",
-                color: "#0F172A",
-              }}
-            >
-              <ArrowLeft size={18} />
-            </button>
-          )}
-          <div>
-            <h2 style={{ fontFamily: "var(--font-display)", fontSize: "16px", fontWeight: "800", color: "#0F172A" }}>
-              My Budget
-            </h2>
-            <span style={{ fontSize: "11px", color: "#64748B" }}>
-              September 2026
-            </span>
-          </div>
-        </div>
-      </div>
+      {/* Standardized Consistent Header */}
+      <Header
+        title="My Budget"
+        subtitle="September 2026 • Monthly Goals"
+        showBack={true}
+        onBack={onBack}
+      />
 
       <div className="screen-content" style={{ flex: 1, padding: "18px 20px" }}>
         {/* Donut Chart Card matching Mockup */}

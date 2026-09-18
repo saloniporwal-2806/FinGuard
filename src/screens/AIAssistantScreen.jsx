@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Bot, Settings, Send, ArrowRight, ShieldCheck, Sparkles } from "lucide-react";
+import { Bot, Send, ArrowRight, ShieldCheck, Sparkles } from "lucide-react";
+import { Header } from "../components/Header";
 
 export function AIAssistantScreen({ onOpenChat, onBack }) {
   const [question, setQuestion] = useState("");
@@ -25,60 +26,13 @@ export function AIAssistantScreen({ onOpenChat, onBack }) {
         paddingBottom: "80px",
       }}
     >
-      {/* Header matching Mockup Screen 5 */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "16px 20px",
-          borderBottom: "1px solid #F1F5F9",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <div
-            style={{
-              width: "36px",
-              height: "36px",
-              borderRadius: "10px",
-              background: "linear-gradient(135deg, #06B6D4 0%, #4F46E5 100%)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#FFFFFF",
-            }}
-          >
-            <Bot size={20} />
-          </div>
-          <div>
-            <h2 style={{ fontFamily: "var(--font-display)", fontSize: "16px", fontWeight: "800", color: "#0F172A" }}>
-              FinGuard AI
-            </h2>
-            <span style={{ fontSize: "10.5px", color: "#059669", display: "flex", alignItems: "center", gap: "4px" }}>
-              <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "#10B981" }} />
-              Always here to help
-            </span>
-          </div>
-        </div>
-
-        <button
-          onClick={onBack}
-          style={{
-            width: "34px",
-            height: "34px",
-            borderRadius: "50%",
-            background: "#F8FAFC",
-            border: "1px solid #E2E8F0",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-            color: "#64748B",
-          }}
-        >
-          <Settings size={16} />
-        </button>
-      </div>
+      {/* Standardized Consistent Header */}
+      <Header
+        title="FinGuard AI"
+        subtitle="Always here to help • 24/7 Security Advisor"
+        showBack={true}
+        onBack={onBack}
+      />
 
       <div
         className="screen-content"

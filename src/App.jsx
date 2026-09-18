@@ -20,12 +20,15 @@ import { MiniQuizScreen } from "./screens/MiniQuizScreen";
 import { RiskHistoryScreen } from "./screens/RiskHistoryScreen";
 import { InsightsScreen } from "./screens/InsightsScreen";
 import { SettingsAboutScreen } from "./screens/SettingsAboutScreen";
+import { AuthScreen } from "./screens/AuthScreen";
 import { BottomNav } from "./components/BottomNav";
 import { StorageService } from "./services/storageService";
+import { AuthService } from "./services/authService";
 import { evaluateRisk } from "./services/riskEngine";
 import { LITERACY_TOPICS } from "./data/literacyTopics";
 
 export default function App() {
+  const [currentUser, setCurrentUser] = useState(() => AuthService.getCurrentUser());
   const [currentScreen, setCurrentScreen] = useState("splash");
   const [screenParams, setScreenParams] = useState(null);
   const [screenStack, setScreenStack] = useState(["dashboard"]);
@@ -130,7 +133,7 @@ export default function App() {
     "learn-hub",
     "budget",
     "profile",
-  ].includes(currentScreen);
+  ].includes(currentScreen) && Boolean(currentUser);
 
   return (
     <div className="app-wrapper">
@@ -197,12 +200,33 @@ export default function App() {
         <div className="app-screen-container">
           {/* Screen 1: Splash Screen */}
           {currentScreen === "splash" && (
-            <SplashScreen onFinish={() => setCurrentScreen("dashboard")} />
+            <SplashScreen
+              onFinish={() => {
+                const user = AuthService.getCurrentUser();
+                if (!user) {
+                  setCurrentScreen("auth");
+                } else {
+                  setCurrentScreen("dashboard");
+                }
+              }}
+            />
+          )}
+
+          {/* Authentication Screen: Login / Signup */}
+          {currentScreen === "auth" && (
+            <AuthScreen
+              onAuthSuccess={(user) => {
+                setCurrentUser(user);
+                setCurrentScreen("dashboard");
+                setScreenStack(["dashboard"]);
+              }}
+            />
           )}
 
           {/* Screen 2: Home Dashboard */}
           {currentScreen === "dashboard" && (
             <DashboardScreen
+              currentUser={currentUser}
               safetyScore={safetyScore}
               recentScans={scans}
               onNavigate={(screen, params) => {
@@ -291,8 +315,19 @@ export default function App() {
           {/* Screen 10: Profile & Settings */}
           {currentScreen === "profile" && (
             <ProfileSettingsScreen
+              currentUser={currentUser}
               onNavigate={(screen) => navigateTo(screen)}
               onResetData={handleResetData}
+              onUpdateProfile={(updatedUser) => {
+                setCurrentUser(updatedUser);
+              }}
+              onLogout={() => {
+                AuthService.logout();
+                setCurrentUser(null);
+                setCurrentScreen("auth");
+                setScreenStack(["auth"]);
+              }}
+              onBack={handleBack}
             />
           )}
 
@@ -362,6 +397,7 @@ export default function App() {
                 navigateTo("scam-check", scan);
               }}
               onSettings={() => navigateTo("settings")}
+              onBack={handleBack}
             />
           )}
 
@@ -371,6 +407,7 @@ export default function App() {
               quizProgress={quizProgress}
               onNavigate={(screen, params) => navigateTo(screen, params)}
               onSettings={() => navigateTo("settings")}
+              onBack={handleBack}
             />
           )}
 

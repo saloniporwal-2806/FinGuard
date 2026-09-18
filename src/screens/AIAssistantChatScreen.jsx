@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { ArrowLeft, Send, Bot, Sparkles, CheckCircle2, ChevronRight, HelpCircle } from "lucide-react";
+import { Header } from "../components/Header";
 import { FinGuardLogo } from "../components/FinGuardLogo";
 
 export function AIAssistantChatScreen({ initialPrompt = "", onBack }) {
@@ -73,57 +74,29 @@ export function AIAssistantChatScreen({ initialPrompt = "", onBack }) {
         paddingBottom: "10px",
       }}
     >
-      {/* Header matching Mockup Screen 8 */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "16px 20px",
-          background: "#FFFFFF",
-          borderBottom: "1px solid #E2E8F0",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <button
-            onClick={onBack}
+      {/* Standard Header with back button */}
+      <Header
+        title="FinGuard AI"
+        subtitle="Online • 24/7 Security Advisor"
+        showBack={true}
+        onBack={onBack}
+        rightAction={
+          <div
             style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              padding: 0,
+              width: "34px",
+              height: "34px",
+              borderRadius: "10px",
+              background: "linear-gradient(135deg, #06B6D4 0%, #4F46E5 100%)",
               display: "flex",
-              color: "#0F172A",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#FFFFFF",
             }}
           >
-            <ArrowLeft size={18} />
-          </button>
-          <div>
-            <h2 style={{ fontFamily: "var(--font-display)", fontSize: "16px", fontWeight: "800", color: "#0F172A" }}>
-              FinGuard AI
-            </h2>
-            <span style={{ fontSize: "10.5px", color: "#10B981", display: "flex", alignItems: "center", gap: "4px" }}>
-              <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#10B981" }} />
-              Online
-            </span>
+            <Bot size={18} />
           </div>
-        </div>
-
-        <div
-          style={{
-            width: "36px",
-            height: "36px",
-            borderRadius: "10px",
-            background: "linear-gradient(135deg, #06B6D4 0%, #4F46E5 100%)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "#FFFFFF",
-          }}
-        >
-          <Bot size={20} />
-        </div>
-      </div>
+        }
+      />
 
       {/* Chat Messages Stream */}
       <div

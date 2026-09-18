@@ -74,7 +74,7 @@ export function SplashScreen({ onFinish }) {
         }}
       >
         <div style={{ marginBottom: "16px" }}>
-          <FinGuardLogo size={74} withGlow={true} />
+          <FinGuardLogo size={110} withGlow={true} />
         </div>
 
         <h1

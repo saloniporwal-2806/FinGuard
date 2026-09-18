@@ -1,0 +1,25 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+    <!-- FinGuard Shield Boundary -->
+    <path
+        android:pathData="M256,64 L128,120 V240 C128,344 182.4,430.4 256,456 C329.6,430.4 384,344 384,240 V120 L256,64 Z"
+        android:fillColor="#26FFFFFF"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="24"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <!-- FinGuard F Lettermark -->
+    <path
+        android:pathData="M216,192 H312 M216,264 H284 M216,192 V360"
+        android:strokeColor="#06B6D4"
+        android:strokeWidth="36"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <!-- Verification Badge Circle -->
+    <path
+        android:pathData="M 360, 140 m -28, 0 a 28,28 0 1,0 56,0 a 28,28 0 1,0 -56,0"
+        android:fillColor="#10B981" />
+</vector>

@@ -1,4 +1,4 @@
-package com.fintech.finguardai;
+package com.finguard.ai;
 
 import com.getcapacitor.BridgeActivity;
 

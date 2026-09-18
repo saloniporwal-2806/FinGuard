@@ -16,6 +16,7 @@ import {
 import { DemoPresetBar } from "../components/DemoPresetBar";
 
 export function DashboardScreen({
+  currentUser,
   safetyScore,
   recentScans = [],
   onNavigate,
@@ -28,6 +29,10 @@ export function DashboardScreen({
   const strokeWidth = 6;
   const circumference = Math.PI * radius; // Half-circle
   const strokeDashoffset = circumference - (healthScore / 100) * circumference;
+
+  const displayName = currentUser?.name
+    ? currentUser.name.split(" ")[0]
+    : "User";
 
   return (
     <div className="screen-content" style={{ padding: "16px 18px 80px 18px" }}>
@@ -43,7 +48,7 @@ export function DashboardScreen({
               lineHeight: 1.25,
             }}
           >
-            Good Morning,<br />Saloni 👋
+            Good Morning,<br />{displayName} 👋
           </h2>
         </div>
 
@@ -92,12 +97,21 @@ export function DashboardScreen({
               justifyContent: "center",
               color: "#FFFFFF",
               fontWeight: "800",
-              fontSize: "15px",
+              fontSize: "14px",
               cursor: "pointer",
               boxShadow: "0 4px 10px rgba(79, 70, 229, 0.25)",
+              overflow: "hidden",
             }}
           >
-            S
+            {currentUser?.avatar ? (
+              <img
+                src={currentUser.avatar}
+                alt={currentUser.name}
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              />
+            ) : (
+              (currentUser?.name || "FG").slice(0, 1).toUpperCase()
+            )}
           </div>
         </div>
       </div>

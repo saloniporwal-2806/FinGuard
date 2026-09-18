@@ -3,7 +3,7 @@ import { BarChart3, ShieldAlert, AlertTriangle, ShieldCheck, BookOpen, Lightbulb
 import { Header } from "../components/Header";
 import { LITERACY_TOPICS } from "../data/literacyTopics";
 
-export function InsightsScreen({ scans = [], quizProgress = {}, onNavigate, onSettings }) {
+export function InsightsScreen({ scans = [], quizProgress = {}, onNavigate, onSettings, onBack }) {
   const totalScans = scans.length;
   const highRiskCount = scans.filter((s) => s.score >= 70).length;
   const medRiskCount = scans.filter((s) => s.score >= 40 && s.score < 70).length;
@@ -27,6 +27,8 @@ export function InsightsScreen({ scans = [], quizProgress = {}, onNavigate, onSe
         title="Security Insights"
         subtitle="Vulnerability analytics & habit tracking"
         onSettings={onSettings}
+        onBack={onBack}
+        showBack={Boolean(onBack)}
       />
 
       <div className="screen-content" style={{ flex: 1 }}>
