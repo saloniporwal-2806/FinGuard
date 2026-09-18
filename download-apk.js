@@ -35,7 +35,9 @@ async function checkAndDownload() {
           const buffer = await apkRes.arrayBuffer();
           const targetPath = path.resolve('FinGuard-AI.apk');
           fs.writeFileSync(targetPath, Buffer.from(buffer));
+          const stats = fs.statSync(targetPath);
           console.log(`SUCCESS! APK downloaded directly to: ${targetPath}`);
+          console.log(`File size: ${(stats.size / (1024 * 1024)).toFixed(2)} MB`);
           return true;
         }
       }
@@ -49,13 +51,13 @@ async function checkAndDownload() {
 }
 
 async function loop() {
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < 50; i++) {
     const done = await checkAndDownload();
     if (done) {
       process.exit(0);
     }
-    console.log(`Waiting 15 seconds for cloud compile... (attempt ${i + 1}/30)`);
-    await new Promise(r => setTimeout(r, 15000));
+    console.log(`Waiting 12 seconds for cloud compile... (attempt ${i + 1}/50)`);
+    await new Promise(r => setTimeout(r, 12000));
   }
 }
 
