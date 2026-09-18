@@ -5,6 +5,8 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+permissions: write-all
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -36,14 +38,23 @@ jobs:
       - name: Make Gradle Executable
         run: chmod +x android/gradlew
 
-      - name: Accept Android Licenses and Build APK
+      - name: Build Android APK with Gradle
         working-directory: android
-        run: |
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
-          ./gradlew assembleDebug --no-daemon
+        run: ./gradlew assembleDebug --no-daemon
 
-      - name: Upload APK
+      - name: Prepare APK File
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk ./FinGuard-AI.apk
+
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: FinGuard-AI-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: ./FinGuard-AI.apk
+
+      - name: Create GitHub Release with APK
+        uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/main'
+        with:
+          tag_name: v1.0.0
+          name: "FinGuard AI APK Release"
+          files: ./FinGuard-AI.apk
