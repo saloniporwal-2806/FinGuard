@@ -1,0 +1,18 @@
+{
+  "short_name": "FinGuard AI",
+  "name": "FinGuard AI — Think. Learn. Verify. Pay Safely.",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#F8FAFC",
+  "theme_color": "#4F46E5",
+  "display": "standalone",
+  "orientation": "portrait",
+  "scope": "/"
+}
