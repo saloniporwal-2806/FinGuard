@@ -18,8 +18,8 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install Dependencies
-        run: npm ci || npm install
+      - name: Install Node Dependencies
+        run: npm install --legacy-peer-deps
 
       - name: Build Web Assets
         run: npm run build
@@ -29,23 +29,22 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
+          cache: 'gradle'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Sync Capacitor Android
-        run: npx cap sync android
+      - name: Copy Assets to Android
+        run: npx cap copy android
 
       - name: Make Gradle executable
         run: chmod +x android/gradlew
 
-      - name: Build Debug APK
+      - name: Build Debug APK with Gradle
+        working-directory: android
         run: |
-          cd android
-          ./gradlew assembleDebug --stacktrace
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: FinGuard-AI-APK
+          name: FinGuard-AI
           path: android/app/build/outputs/apk/debug/app-debug.apk
