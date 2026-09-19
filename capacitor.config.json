@@ -1,5 +1,9 @@
 {
   "appId": "com.finguard.ai",
   "appName": "FinGuard AI",
-  "webDir": "dist"
+  "webDir": "dist",
+  "server": {
+    "url": "https://fin-guard-iota.vercel.app",
+    "cleartext": true
+  }
 }
