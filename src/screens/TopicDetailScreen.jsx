@@ -18,6 +18,8 @@ import {
   FileText,
 } from "lucide-react";
 import { Header } from "../components/Header";
+import { useLanguage } from "../context/LanguageContext";
+import { getLocalizedTopic } from "../data/literacyTranslations";
 
 const ICON_MAP = {
   ShieldAlert,
@@ -32,7 +34,10 @@ const ICON_MAP = {
   KeyRound,
 };
 
-export function TopicDetailScreen({ topic, isCompleted, userScore, onStartQuiz, onBack }) {
+export function TopicDetailScreen({ topic: rawTopic, isCompleted, userScore, onStartQuiz, onBack }) {
+  const { language, t } = useLanguage();
+  const topic = getLocalizedTopic(rawTopic, language);
+
   if (!topic) return null;
 
   const Icon = ICON_MAP[topic.icon] || ShieldAlert;
@@ -41,7 +46,7 @@ export function TopicDetailScreen({ topic, isCompleted, userScore, onStartQuiz, 
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
       <Header
         title={topic.title}
-        subtitle={`${topic.readTime} reading • Financial Safety`}
+        subtitle={`${topic.readTime} • FinGuard Safety`}
         showBack={true}
         onBack={onBack}
       />

@@ -14,6 +14,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { DemoPresetBar } from "../components/DemoPresetBar";
+import { useLanguage } from "../context/LanguageContext";
 
 export function DashboardScreen({
   currentUser,
@@ -22,6 +23,7 @@ export function DashboardScreen({
   onNavigate,
   onSelectDemoCase,
 }) {
+  const { t } = useLanguage();
   const healthScore = safetyScore?.score || 78;
 
   // Arc calculation for financial health gauge (radius 37)
@@ -48,7 +50,7 @@ export function DashboardScreen({
               lineHeight: 1.25,
             }}
           >
-            Good Morning,<br />{displayName} 👋
+            {t("dash_greeting", "Good Morning,")}<br />{displayName} 👋
           </h2>
         </div>
 
@@ -130,7 +132,7 @@ export function DashboardScreen({
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
           <span style={{ fontSize: "12px", fontWeight: "700", color: "#64748B", letterSpacing: "0.2px" }}>
-            Your Financial Health
+            {t("dash_health_title", "Your Financial Health")}
           </span>
           <span style={{ fontSize: "13px", color: "#94A3B8", cursor: "pointer" }}>✕</span>
         </div>
@@ -193,7 +195,7 @@ export function DashboardScreen({
                   lineHeight: 1.2,
                 }}
               >
-                Good
+                {t("dash_health_good", "Good")}
               </span>
             </div>
           </div>
@@ -201,7 +203,7 @@ export function DashboardScreen({
           {/* Description & Link */}
           <div style={{ flex: 1 }}>
             <p style={{ fontSize: "12px", color: "#334155", fontWeight: "600", lineHeight: 1.35 }}>
-              You're on track! Keep learning and stay secure.
+              {t("dash_health_desc", "You're on track! Keep learning and stay secure.")}
             </p>
             <button
               onClick={() => onNavigate("insights")}
@@ -219,7 +221,7 @@ export function DashboardScreen({
                 gap: "2px",
               }}
             >
-              View Details →
+              {t("btn_view_details", "View Details →")}
             </button>
           </div>
         </div>
@@ -246,7 +248,7 @@ export function DashboardScreen({
           >
             <QrCode size={24} />
           </div>
-          <span style={{ fontSize: "11px", fontWeight: "600", color: "#334155" }}>Scan & Pay</span>
+          <span style={{ fontSize: "11px", fontWeight: "600", color: "#334155" }}>{t("dash_quick_scan", "Scan & Pay")}</span>
         </div>
 
         {/* Learn */}
@@ -268,7 +270,7 @@ export function DashboardScreen({
           >
             <BookOpen size={24} />
           </div>
-          <span style={{ fontSize: "11px", fontWeight: "600", color: "#334155" }}>Learn</span>
+          <span style={{ fontSize: "11px", fontWeight: "600", color: "#334155" }}>{t("dash_quick_learn", "Learn")}</span>
         </div>
 
         {/* Budget */}
@@ -290,7 +292,7 @@ export function DashboardScreen({
           >
             <PieChart size={24} />
           </div>
-          <span style={{ fontSize: "11px", fontWeight: "600", color: "#334155" }}>Budget</span>
+          <span style={{ fontSize: "11px", fontWeight: "600", color: "#334155" }}>{t("dash_quick_budget", "Budget")}</span>
         </div>
 
         {/* More */}
@@ -312,7 +314,7 @@ export function DashboardScreen({
           >
             <LayoutGrid size={24} />
           </div>
-          <span style={{ fontSize: "11px", fontWeight: "600", color: "#334155" }}>AI & More</span>
+          <span style={{ fontSize: "11px", fontWeight: "600", color: "#334155" }}>{t("dash_quick_more", "AI & More")}</span>
         </div>
       </div>
 
@@ -331,7 +333,7 @@ export function DashboardScreen({
       >
         <div>
           <span style={{ fontSize: "11px", fontWeight: "700", color: "#4F46E5", textTransform: "uppercase" }}>
-            Total Balance
+            {t("dash_total_balance", "Total Balance")}
           </span>
           <div style={{ fontFamily: "var(--font-display)", fontSize: "24px", fontWeight: "800", color: "#0F172A", marginTop: "2px" }}>
             ₹ 12,450
@@ -351,7 +353,7 @@ export function DashboardScreen({
             }}
           >
             <TrendingUp size={11} />
-            +12% this month
+            {t("dash_balance_trend", "+12% this month")}
           </div>
         </div>
 
@@ -372,7 +374,7 @@ export function DashboardScreen({
             boxShadow: "0 2px 6px rgba(79, 70, 229, 0.1)",
           }}
         >
-          View Account →
+          {t("btn_view_account", "View Account →")}
         </button>
       </div>
 
@@ -407,8 +409,8 @@ export function DashboardScreen({
             <ShieldAlert size={18} />
           </div>
           <div>
-            <div style={{ fontSize: "12px", fontWeight: "700", color: "#0F172A" }}>Scam Check</div>
-            <span style={{ fontSize: "10px", color: "#64748B" }}>Analyze SMS / text</span>
+            <div style={{ fontSize: "12px", fontWeight: "700", color: "#0F172A" }}>{t("dash_scam_check", "Scam Check")}</div>
+            <span style={{ fontSize: "10px", color: "#64748B" }}>{t("dash_scam_check_sub", "Analyze SMS / text")}</span>
           </div>
         </div>
 
@@ -441,8 +443,8 @@ export function DashboardScreen({
             <Link2 size={18} />
           </div>
           <div>
-            <div style={{ fontSize: "12px", fontWeight: "700", color: "#0F172A" }}>Link Check</div>
-            <span style={{ fontSize: "10px", color: "#64748B" }}>Inspect URL safety</span>
+            <div style={{ fontSize: "12px", fontWeight: "700", color: "#0F172A" }}>{t("dash_link_check", "Link Check")}</div>
+            <span style={{ fontSize: "10px", color: "#64748B" }}>{t("dash_link_check_sub", "Inspect URL safety")}</span>
           </div>
         </div>
       </div>
@@ -451,7 +453,7 @@ export function DashboardScreen({
       <div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
           <h3 style={{ fontFamily: "var(--font-display)", fontSize: "14px", fontWeight: "800", color: "#0F172A" }}>
-            Recent Activity
+            {t("dash_recent_activity", "Recent Activity")}
           </h3>
           <button
             onClick={() => onNavigate("history")}
@@ -464,7 +466,7 @@ export function DashboardScreen({
               cursor: "pointer",
             }}
           >
-            View All →
+            {t("btn_view_all", "View All →")}
           </button>
         </div>
 

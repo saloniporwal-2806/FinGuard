@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { Smartphone, Monitor, Shield, Sparkles, ShieldCheck, AlertTriangle, ShieldAlert } from "lucide-react";
+import { Smartphone, Monitor, ShieldCheck, AlertTriangle, ShieldAlert } from "lucide-react";
 import { DEMO_CASES } from "./data/demoCases";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { SplashScreen } from "./screens/SplashScreen";
 import { DashboardScreen } from "./screens/DashboardScreen";
 import { ScanAndPayScreen } from "./screens/ScanAndPayScreen";
@@ -132,6 +133,8 @@ export default function App() {
     "dashboard",
     "learn-hub",
     "budget",
+    "goals",
+    "goal",
     "profile",
   ].includes(currentScreen) && Boolean(currentUser);
 
@@ -198,6 +201,7 @@ export default function App() {
 
         {/* Screen Content Container */}
         <div className="app-screen-container">
+          <ErrorBoundary onHome={() => setCurrentScreen("dashboard")} onReset={handleResetData}>
           {/* Screen 1: Splash Screen */}
           {currentScreen === "splash" && (
             <SplashScreen
@@ -304,11 +308,12 @@ export default function App() {
             />
           )}
 
-          {/* Screen 9: Budget & Expense Tracker */}
-          {currentScreen === "budget" && (
+          {/* Screen 9: Budget & Goals Tracker */}
+          {(currentScreen === "budget" || currentScreen === "goals" || currentScreen === "goal") && (
             <BudgetScreen
+              initialTab={currentScreen === "goals" || currentScreen === "goal" ? "goals" : "budget"}
               onBack={handleBack}
-              onSetBudget={() => alert("Budget updated to ₹ 15,000 for September 2026")}
+              onSetBudget={(val) => alert(`Budget updated to ₹ ${val?.toLocaleString("en-IN") || "15,000"} for September 2026`)}
             />
           )}
 
@@ -417,6 +422,7 @@ export default function App() {
               onResetData={handleResetData}
             />
           )}
+          </ErrorBoundary>
         </div>
 
         {/* 5-Tab Bottom Navigation Bar */}

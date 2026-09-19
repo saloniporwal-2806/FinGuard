@@ -1,13 +1,16 @@
 import React from "react";
 import { Home, BookOpen, QrCode, PieChart, User } from "lucide-react";
+import { useLanguage } from "../context/LanguageContext";
 
 export function BottomNav({ currentScreen, onNavigate }) {
+  const { t } = useLanguage();
+
   const navItems = [
-    { id: "dashboard", label: "Home", icon: Home },
-    { id: "learn-hub", label: "Learn", icon: BookOpen },
-    { id: "scan-pay", label: "Scan", icon: QrCode, isCenter: true },
-    { id: "budget", label: "Goals", icon: PieChart },
-    { id: "profile", label: "Profile", icon: User },
+    { id: "dashboard", label: t("nav_home", "Home"), icon: Home },
+    { id: "learn-hub", label: t("nav_learn", "Learn"), icon: BookOpen },
+    { id: "scan-pay", label: t("nav_scan", "Scan"), icon: QrCode, isCenter: true },
+    { id: "budget", label: t("nav_goals", "Goals"), icon: PieChart },
+    { id: "profile", label: t("nav_profile", "Profile"), icon: User },
   ];
 
   return (
@@ -16,6 +19,7 @@ export function BottomNav({ currentScreen, onNavigate }) {
         const Icon = item.icon;
         const isActive =
           currentScreen === item.id ||
+          (item.id === "budget" && (currentScreen === "budget" || currentScreen === "goals" || currentScreen === "goal")) ||
           (item.id === "learn-hub" && (currentScreen === "topic-detail" || currentScreen === "mini-quiz" || currentScreen === "financial-education")) ||
           (item.id === "profile" && currentScreen === "settings");
 
@@ -25,7 +29,7 @@ export function BottomNav({ currentScreen, onNavigate }) {
               key={item.id}
               className="nav-item scan-center-btn"
               onClick={() => onNavigate(item.id)}
-              title="Scan & Pay"
+              title={t("dash_quick_scan", "Scan & Pay")}
             >
               <div className="scan-center-circle">
                 <Icon size={24} />

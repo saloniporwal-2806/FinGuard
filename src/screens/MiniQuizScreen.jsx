@@ -2,8 +2,12 @@ import React, { useState } from "react";
 import confetti from "canvas-confetti";
 import { CheckCircle2, XCircle, ArrowRight, RotateCcw, Trophy, Sparkles, BookOpen } from "lucide-react";
 import { Header } from "../components/Header";
+import { useLanguage } from "../context/LanguageContext";
+import { getLocalizedTopic } from "../data/literacyTranslations";
 
-export function MiniQuizScreen({ topic, onQuizComplete, onBack }) {
+export function MiniQuizScreen({ topic: rawTopic, onQuizComplete, onBack }) {
+  const { language, t } = useLanguage();
+  const topic = getLocalizedTopic(rawTopic, language);
   const questions = topic.quiz || [];
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState(null);
@@ -229,12 +233,12 @@ export function MiniQuizScreen({ topic, onQuizComplete, onBack }) {
                   onClick={handleConfirmAnswer}
                   style={{ opacity: selectedOption === null ? 0.6 : 1 }}
                 >
-                  <span>Submit Answer</span>
+                  <span>{t("quiz_confirm", "Confirm Answer")}</span>
                 </button>
               ) : (
                 <button className="btn-primary" onClick={handleNextQuestion}>
                   <span>
-                    {currentIndex < questions.length - 1 ? "Next Question" : "View Final Results"}
+                    {currentIndex < questions.length - 1 ? t("quiz_next", "Next Question") : t("quiz_finish", "View Results")}
                   </span>
                   <ArrowRight size={16} />
                 </button>
@@ -333,11 +337,11 @@ export function MiniQuizScreen({ topic, onQuizComplete, onBack }) {
             <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "10px" }}>
               <button className="btn-accent" onClick={onBack}>
                 <BookOpen size={16} />
-                <span>Return to Learn Hub</span>
+                <span>{t("quiz_back_learn", "Back to Learn Hub")}</span>
               </button>
               <button className="btn-secondary" onClick={handleRestartQuiz}>
                 <RotateCcw size={16} />
-                <span>Retake Quiz</span>
+                <span>{t("quiz_restart", "Retake Quiz")}</span>
               </button>
             </div>
           </div>

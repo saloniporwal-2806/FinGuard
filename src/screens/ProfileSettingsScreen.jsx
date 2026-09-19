@@ -21,6 +21,7 @@ import {
 import { Header } from "../components/Header";
 import { StorageService } from "../services/storageService";
 import { AuthService } from "../services/authService";
+import { useLanguage } from "../context/LanguageContext";
 
 export function ProfileSettingsScreen({
   currentUser,
@@ -30,8 +31,10 @@ export function ProfileSettingsScreen({
   onLogout,
   onBack,
 }) {
+  const { language, setLanguage, t } = useLanguage();
   const [resetSuccess, setResetSuccess] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [editName, setEditName] = useState(currentUser?.name || "");
   const [editEmail, setEditEmail] = useState(currentUser?.email || "");
   const [editAvatar, setEditAvatar] = useState(currentUser?.avatar || null);
@@ -50,24 +53,24 @@ export function ProfileSettingsScreen({
   const menuItems = [
     {
       id: "progress",
-      label: "My Progress",
-      subtitle: "2/10 lessons completed",
+      label: t("profile_progress", "My Progress"),
+      subtitle: `2/10 ${t("profile_progress_sub", "lessons completed")}`,
       icon: Award,
       color: "#F59E0B",
       action: () => onNavigate("learn-hub"),
     },
     {
       id: "saved",
-      label: "Saved Articles",
-      subtitle: "Review bookmarked security tips",
+      label: t("profile_saved", "Saved Articles"),
+      subtitle: t("profile_saved_sub", "Review bookmarked security tips"),
       icon: Bookmark,
       color: "#3B82F6",
       action: () => onNavigate("learn-hub"),
     },
     {
       id: "notifications",
-      label: "Notifications",
-      subtitle: "3 new security alerts",
+      label: t("profile_notifications", "Notifications"),
+      subtitle: `3 new ${t("profile_notifications_sub", "security alerts")}`,
       badge: "3",
       icon: Bell,
       color: "#EF4444",
@@ -75,24 +78,24 @@ export function ProfileSettingsScreen({
     },
     {
       id: "language",
-      label: "Language",
-      subtitle: "English",
+      label: t("profile_language", "Language"),
+      subtitle: language === "hi" ? "हिंदी (Hindi)" : "English",
       icon: Globe,
       color: "#10B981",
-      action: null,
+      action: () => setShowLanguageModal(true),
     },
     {
       id: "help",
-      label: "Help & Support",
-      subtitle: "FAQs and cyber helplines (1930)",
+      label: t("profile_help", "Help & Support"),
+      subtitle: t("profile_help_sub", "FAQs and cyber helplines (1930)"),
       icon: HelpCircle,
       color: "#8B5CF6",
       action: () => onNavigate("ai-assistant"),
     },
     {
       id: "about",
-      label: "About FinGuard",
-      subtitle: "Version 1.0 • Prototype",
+      label: t("profile_about", "About FinGuard"),
+      subtitle: t("profile_about_sub", "Version 1.0 • Prototype"),
       icon: Info,
       color: "#06B6D4",
       action: () => onNavigate("settings"),
@@ -629,6 +632,134 @@ export function ProfileSettingsScreen({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Language Selection Modal */}
+      {showLanguageModal && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(15, 23, 42, 0.7)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 999,
+            padding: "20px",
+          }}
+        >
+          <div
+            style={{
+              background: "#FFFFFF",
+              borderRadius: "24px",
+              padding: "20px",
+              width: "100%",
+              maxWidth: "340px",
+              boxShadow: "0 20px 40px rgba(0, 0, 0, 0.2)",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <Globe size={18} color="#4F46E5" />
+                <h3 style={{ fontSize: "16px", fontWeight: "800", color: "#0F172A" }}>
+                  {t("profile_language_select", "Select Language")}
+                </h3>
+              </div>
+              <button onClick={() => setShowLanguageModal(false)} style={{ color: "#94A3B8" }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              {/* English Option */}
+              <div
+                onClick={() => {
+                  setLanguage("en");
+                  setShowLanguageModal(false);
+                }}
+                style={{
+                  padding: "14px 16px",
+                  borderRadius: "16px",
+                  border: "1.5px solid",
+                  borderColor: language === "en" ? "#4F46E5" : "#E2E8F0",
+                  background: language === "en" ? "#EEF2FF" : "#FFFFFF",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: "14px", fontWeight: "800", color: language === "en" ? "#4F46E5" : "#0F172A" }}>
+                    English
+                  </div>
+                  <span style={{ fontSize: "11px", color: "#64748B" }}>Default</span>
+                </div>
+                {language === "en" && (
+                  <div
+                    style={{
+                      width: "24px",
+                      height: "24px",
+                      borderRadius: "50%",
+                      background: "#4F46E5",
+                      color: "#FFFFFF",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Check size={14} />
+                  </div>
+                )}
+              </div>
+
+              {/* Hindi Option */}
+              <div
+                onClick={() => {
+                  setLanguage("hi");
+                  setShowLanguageModal(false);
+                }}
+                style={{
+                  padding: "14px 16px",
+                  borderRadius: "16px",
+                  border: "1.5px solid",
+                  borderColor: language === "hi" ? "#4F46E5" : "#E2E8F0",
+                  background: language === "hi" ? "#EEF2FF" : "#FFFFFF",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: "14px", fontWeight: "800", color: language === "hi" ? "#4F46E5" : "#0F172A" }}>
+                    हिंदी (Hindi)
+                  </div>
+                  <span style={{ fontSize: "11px", color: "#64748B" }}>भारतीय भाषा</span>
+                </div>
+                {language === "hi" && (
+                  <div
+                    style={{
+                      width: "24px",
+                      height: "24px",
+                      borderRadius: "50%",
+                      background: "#4F46E5",
+                      color: "#FFFFFF",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Check size={14} />
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}
