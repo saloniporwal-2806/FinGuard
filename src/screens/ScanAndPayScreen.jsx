@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   QrCode,
   Camera,
@@ -10,8 +10,10 @@ import {
   Shield,
   RefreshCw,
   IndianRupee,
+  Settings,
+  SwitchCamera,
 } from "lucide-react";
-import { Html5Qrcode } from "html5-qrcode";
+import jsQR from "jsqr";
 import { Header } from "../components/Header";
 import { parseUpiQr } from "../services/upiParser";
 import { useLanguage } from "../context/LanguageContext";
@@ -22,13 +24,19 @@ export function ScanAndPayScreen({ onBack, onSelectRecipient }) {
 
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState("");
+  const [cameraErrorType, setCameraErrorType] = useState(""); // "permission" | "not_found" | "busy" | "generic" | ""
   const [isProcessing, setIsProcessing] = useState(false);
   const [decodedData, setDecodedData] = useState(null);
   const [customAmount, setCustomAmount] = useState("");
   const [facingMode, setFacingMode] = useState("environment"); // "environment" | "user"
 
-  const html5QrCodeRef = useRef(null);
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
+  const canvasRef = useRef(null);
   const fileInputRef = useRef(null);
+  const isScanningRef = useRef(false);
+  const animationFrameRef = useRef(null);
+  const barcodeDetectorRef = useRef(null);
 
   const quickContacts = [
     { name: "Mom", initials: "M", bg: "#EC4899", vpa: "mom@upi" },
@@ -36,68 +44,234 @@ export function ScanAndPayScreen({ onBack, onSelectRecipient }) {
     { name: "Aman", initials: "A", bg: "#10B981", vpa: "aman@paytm" },
   ];
 
-  const stopCamera = async () => {
-    if (html5QrCodeRef.current) {
+  // Initialize native BarcodeDetector if supported in Android Chromium WebView
+  useEffect(() => {
+    if ("BarcodeDetector" in window) {
       try {
-        if (html5QrCodeRef.current.isScanning) {
-          await html5QrCodeRef.current.stop();
-        }
-        await html5QrCodeRef.current.clear();
-      } catch (err) {
-        console.warn("Error stopping Html5Qrcode:", err);
+        barcodeDetectorRef.current = new window.BarcodeDetector({
+          formats: ["qr_code"],
+        });
+      } catch (e) {
+        console.warn("BarcodeDetector init fallback to jsQR:", e);
       }
-      html5QrCodeRef.current = null;
+    }
+  }, []);
+
+  const stopCamera = useCallback(() => {
+    isScanningRef.current = false;
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => {
+        try {
+          track.stop();
+          track.enabled = false;
+        } catch (e) {
+          console.warn("Track stop error:", e);
+        }
+      });
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      try {
+        videoRef.current.pause();
+      } catch (e) {}
+      videoRef.current.srcObject = null;
     }
     setIsCameraActive(false);
-  };
+    setIsProcessing(false);
+  }, []);
 
-  // Stop camera when unmounting
+  // Stop camera when unmounting or navigating away
   useEffect(() => {
     return () => {
       stopCamera();
     };
-  }, []);
+  }, [stopCamera]);
+
+  const handleQrDecoded = useCallback(
+    (rawText) => {
+      stopCamera();
+      const parsed = parseUpiQr(rawText);
+      setDecodedData(parsed);
+      setCustomAmount(parsed.amount || "");
+    },
+    [stopCamera]
+  );
+
+  const scanVideoFrame = useCallback(() => {
+    if (!isScanningRef.current || !videoRef.current) return;
+
+    const video = videoRef.current;
+    if (
+      video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA &&
+      video.videoWidth > 0 &&
+      video.videoHeight > 0
+    ) {
+      // 1. Try Hardware-Accelerated BarcodeDetector if available
+      if (barcodeDetectorRef.current) {
+        barcodeDetectorRef.current
+          .detect(video)
+          .then((barcodes) => {
+            if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
+              handleQrDecoded(barcodes[0].rawValue);
+              return;
+            }
+            if (isScanningRef.current) {
+              animationFrameRef.current = requestAnimationFrame(scanVideoFrame);
+            }
+          })
+          .catch(() => {
+            runJsQrScan(video);
+          });
+        return;
+      }
+
+      // 2. jsQR Canvas fallback
+      runJsQrScan(video);
+      return;
+    }
+
+    if (isScanningRef.current) {
+      animationFrameRef.current = requestAnimationFrame(scanVideoFrame);
+    }
+  }, [handleQrDecoded]);
+
+  const runJsQrScan = (video) => {
+    try {
+      let canvas = canvasRef.current;
+      if (!canvas) {
+        canvas = document.createElement("canvas");
+        canvasRef.current = canvas;
+      }
+
+      const maxDim = 640;
+      let width = video.videoWidth;
+      let height = video.videoHeight;
+      if (width > maxDim || height > maxDim) {
+        const scale = Math.min(maxDim / width, maxDim / height);
+        width = Math.floor(width * scale);
+        height = Math.floor(height * scale);
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      if (ctx) {
+        ctx.drawImage(video, 0, 0, width, height);
+        const imageData = ctx.getImageData(0, 0, width, height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+          inversionAttempts: "dontInvert",
+        });
+        if (code && code.data) {
+          handleQrDecoded(code.data);
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn("jsQR frame error:", e);
+    }
+
+    if (isScanningRef.current) {
+      animationFrameRef.current = requestAnimationFrame(scanVideoFrame);
+    }
+  };
 
   const startCamera = async (mode = facingMode) => {
     setCameraError("");
+    setCameraErrorType("");
     setIsProcessing(true);
 
     try {
-      if (html5QrCodeRef.current && html5QrCodeRef.current.isScanning) {
-        await stopCamera();
+      // Ensure previous session is terminated cleanly
+      stopCamera();
+
+      // Trigger Android bridge permission check if available
+      if (window.AndroidCameraBridge?.hasCameraPermission) {
+        const hasPerm = window.AndroidCameraBridge.hasCameraPermission();
+        if (!hasPerm && window.AndroidCameraBridge.requestCameraPermission) {
+          window.AndroidCameraBridge.requestCameraPermission();
+        }
       }
 
-      const qrCode = new Html5Qrcode("finguard-qr-viewfinder");
-      html5QrCodeRef.current = qrCode;
-
-      const config = {
-        fps: 15,
-        qrbox: { width: 200, height: 200 },
-        aspectRatio: 1.0,
+      let stream;
+      const primaryConstraints = {
+        video: {
+          facingMode: { ideal: mode },
+          width: { ideal: 1280, min: 640 },
+          height: { ideal: 720, min: 480 },
+        },
+        audio: false,
       };
 
-      await qrCode.start(
-        { facingMode: mode },
-        config,
-        (decodedText) => {
-          handleQrDecoded(decodedText);
-        },
-        () => {
-          // ignore scan frame errors
-        }
-      );
+      try {
+        stream = await navigator.mediaDevices.getUserMedia(primaryConstraints);
+      } catch (firstErr) {
+        console.warn("Primary constraints failed, falling back to basic:", firstErr);
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: mode },
+          audio: false,
+        });
+      }
 
-      setIsCameraActive(true);
-      setIsProcessing(false);
+      streamRef.current = stream;
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.setAttribute("autoplay", "");
+        videoRef.current.setAttribute("playsinline", "");
+        videoRef.current.setAttribute("webkit-playsinline", "true");
+        videoRef.current.muted = true;
+
+        await videoRef.current.play().catch((err) => {
+          console.warn("Video play error:", err);
+        });
+
+        setIsCameraActive(true);
+        setIsProcessing(false);
+        isScanningRef.current = true;
+        animationFrameRef.current = requestAnimationFrame(scanVideoFrame);
+      } else {
+        setIsCameraActive(true);
+        setIsProcessing(false);
+      }
     } catch (err) {
       console.error("Camera start error:", err);
       setIsProcessing(false);
       setIsCameraActive(false);
-      setCameraError(
-        err?.message?.includes("NotAllowedError")
-          ? "Camera permission was denied. Please allow camera access in your device settings."
-          : "Could not open camera stream. You can upload a QR image from your gallery or choose a demo case."
-      );
+      isScanningRef.current = false;
+
+      if (
+        err?.name === "NotAllowedError" ||
+        err?.name === "PermissionDeniedError" ||
+        err?.message?.toLowerCase().includes("denied")
+      ) {
+        setCameraErrorType("permission");
+        setCameraError(
+          "Camera permission was denied. Camera access is required to scan QR codes."
+        );
+      } else if (
+        err?.name === "NotFoundError" ||
+        err?.name === "DevicesNotFoundError"
+      ) {
+        setCameraErrorType("not_found");
+        setCameraError("No camera hardware was detected on this device.");
+      } else if (
+        err?.name === "NotReadableError" ||
+        err?.name === "TrackStartError"
+      ) {
+        setCameraErrorType("busy");
+        setCameraError(
+          "Camera is currently busy or in use by another app. Please close other camera apps and retry."
+        );
+      } else {
+        setCameraErrorType("generic");
+        setCameraError(
+          "Could not open live camera stream. You can upload a QR image from your gallery or choose a demo case."
+        );
+      }
     }
   };
 
@@ -109,11 +283,10 @@ export function ScanAndPayScreen({ onBack, onSelectRecipient }) {
     }
   };
 
-  const handleQrDecoded = async (rawText) => {
-    await stopCamera();
-    const parsed = parseUpiQr(rawText);
-    setDecodedData(parsed);
-    setCustomAmount(parsed.amount || "");
+  const handleRefreshCamera = async () => {
+    setCameraError("");
+    setCameraErrorType("");
+    await startCamera(facingMode);
   };
 
   const handleFileUpload = async (e) => {
@@ -122,16 +295,76 @@ export function ScanAndPayScreen({ onBack, onSelectRecipient }) {
 
     setIsProcessing(true);
     setCameraError("");
+    setCameraErrorType("");
 
     try {
-      const qrCode = new Html5Qrcode("finguard-qr-temp-reader");
-      const decodedText = await qrCode.scanFile(file, true);
-      qrCode.clear();
-      setIsProcessing(false);
-      handleQrDecoded(decodedText);
+      // 1. Try Hardware-Accelerated BarcodeDetector with ImageBitmap
+      if ("BarcodeDetector" in window && window.createImageBitmap) {
+        try {
+          const bitmap = await createImageBitmap(file);
+          const detector =
+            barcodeDetectorRef.current ||
+            new window.BarcodeDetector({ formats: ["qr_code"] });
+          const barcodes = await detector.detect(bitmap);
+          if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
+            setIsProcessing(false);
+            handleQrDecoded(barcodes[0].rawValue);
+            return;
+          }
+        } catch (bitmapErr) {
+          console.warn("BarcodeDetector image decode fallback to jsQR:", bitmapErr);
+        }
+      }
+
+      // 2. jsQR Canvas fallback
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          try {
+            const canvas = document.createElement("canvas");
+            canvas.width = img.naturalWidth || img.width;
+            canvas.height = img.naturalHeight || img.height;
+            const ctx = canvas.getContext("2d");
+            if (!ctx) {
+              setIsProcessing(false);
+              setCameraError("Unable to initialize image canvas.");
+              return;
+            }
+            ctx.drawImage(img, 0, 0);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const code = jsQR(imageData.data, imageData.width, imageData.height, {
+              inversionAttempts: "attemptBoth",
+            });
+            setIsProcessing(false);
+            if (code && code.data) {
+              handleQrDecoded(code.data);
+            } else {
+              setCameraError(
+                "No valid QR code found in this image. Please select another image or use Demo QR."
+              );
+            }
+          } catch (decodeErr) {
+            setIsProcessing(false);
+            setCameraError("Could not decode QR code from the selected image.");
+          }
+        };
+        img.onerror = () => {
+          setIsProcessing(false);
+          setCameraError("Failed to render the selected image file.");
+        };
+        img.src = reader.result;
+      };
+      reader.onerror = () => {
+        setIsProcessing(false);
+        setCameraError("Failed to read the selected file.");
+      };
+      reader.readAsDataURL(file);
     } catch (err) {
       setIsProcessing(false);
-      setCameraError("No valid QR code could be found in this image. Please try another image or use Demo QR.");
+      setCameraError("Failed to process QR image.");
+    } finally {
+      e.target.value = "";
     }
   };
 
@@ -140,25 +373,31 @@ export function ScanAndPayScreen({ onBack, onSelectRecipient }) {
     setIsProcessing(true);
     setTimeout(() => {
       setIsProcessing(false);
-      let demoPayload = "upi://pay?pa=quickmerchant@icici&pn=QuickMerchant%20Store&am=500&cu=INR&tn=Store%20Purchase";
+      let demoPayload =
+        "upi://pay?pa=quickmerchant@icici&pn=QuickMerchant%20Store&am=500&cu=INR&tn=Store%20Purchase";
       if (demoType === "high") {
-        demoPayload = "upi://pay?pa=lottery-claim-prize@freeupi&pn=Prize%20Reward%20Desk&am=35000&cu=INR&tn=Claim%20Fee";
+        demoPayload =
+          "upi://pay?pa=lottery-claim-prize@freeupi&pn=Prize%20Reward%20Desk&am=35000&cu=INR&tn=Claim%20Fee";
       } else if (demoType === "friend") {
-        demoPayload = "upi://pay?pa=mom@upi&pn=Mom&am=250&cu=INR&tn=Milk%20and%20groceries";
+        demoPayload =
+          "upi://pay?pa=mom@upi&pn=Mom&am=250&cu=INR&tn=Milk%20and%20groceries";
       }
       handleQrDecoded(demoPayload);
-    }, 600);
+    }, 500);
   };
 
   const handleConfirmPayment = () => {
     if (!decodedData) return;
 
     const finalAmount = customAmount || decodedData.amount || "500";
-    const recipientName = decodedData.payeeName || decodedData.payeeVpa || "Merchant";
+    const recipientName =
+      decodedData.payeeName || decodedData.payeeVpa || "Merchant";
     const recipientVpa = decodedData.payeeVpa || recipientName;
 
     const isKnown = KNOWN_RECIPIENTS.some(
-      (k) => k.toLowerCase() === recipientName.toLowerCase() || k.toLowerCase() === recipientVpa.toLowerCase()
+      (k) =>
+        k.toLowerCase() === recipientName.toLowerCase() ||
+        k.toLowerCase() === recipientVpa.toLowerCase()
     );
 
     onSelectRecipient({
@@ -196,17 +435,22 @@ export function ScanAndPayScreen({ onBack, onSelectRecipient }) {
         dark={true}
       />
 
-      <div style={{ padding: "16px 18px", display: "flex", flexDirection: "column", alignItems: "center", gap: "16px" }}>
-        {/* Hidden container for image decoding */}
-        <div id="finguard-qr-temp-reader" style={{ display: "none" }} />
-
+      <div
+        style={{
+          padding: "16px 18px",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: "16px",
+        }}
+      >
         {/* QR Scanner Viewfinder with Neon Cyan Corners */}
         <div
           style={{
             position: "relative",
             width: "240px",
             height: "240px",
-            background: "rgba(15, 23, 42, 0.85)",
+            background: "rgba(15, 23, 42, 0.95)",
             borderRadius: "28px",
             display: "flex",
             alignItems: "center",
@@ -216,24 +460,87 @@ export function ScanAndPayScreen({ onBack, onSelectRecipient }) {
             overflow: "hidden",
           }}
         >
-          {/* 4 Neon Corners */}
-          <div style={{ position: "absolute", top: 12, left: 12, width: 28, height: 28, borderTop: "3.5px solid #06B6D4", borderLeft: "3.5px solid #06B6D4", borderTopLeftRadius: 10, zIndex: 10 }} />
-          <div style={{ position: "absolute", top: 12, right: 12, width: 28, height: 28, borderTop: "3.5px solid #06B6D4", borderRight: "3.5px solid #06B6D4", borderTopRightRadius: 10, zIndex: 10 }} />
-          <div style={{ position: "absolute", bottom: 12, left: 12, width: 28, height: 28, borderBottom: "3.5px solid #06B6D4", borderLeft: "3.5px solid #06B6D4", borderBottomLeftRadius: 10, zIndex: 10 }} />
-          <div style={{ position: "absolute", bottom: 12, right: 12, width: 28, height: 28, borderBottom: "3.5px solid #06B6D4", borderRight: "3.5px solid #06B6D4", borderBottomRightRadius: 10, zIndex: 10 }} />
-
-          {/* Animated Laser */}
-          <div className="scanner-laser" style={{ zIndex: 10 }} />
-
-          {/* HTML5 QR Camera Element */}
-          <div
-            id="finguard-qr-viewfinder"
+          {/* Real Live HTML5 Video Element */}
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            webkit-playsinline="true"
+            muted
             style={{
+              position: "absolute",
+              inset: 0,
               width: "100%",
               height: "100%",
-              display: isCameraActive ? "block" : "none",
               objectFit: "cover",
+              borderRadius: "26px",
+              display: isCameraActive ? "block" : "none",
+              zIndex: 2,
             }}
+          />
+
+          {/* 4 Neon Corners */}
+          <div
+            style={{
+              position: "absolute",
+              top: 12,
+              left: 12,
+              width: 28,
+              height: 28,
+              borderTop: "3.5px solid #06B6D4",
+              borderLeft: "3.5px solid #06B6D4",
+              borderTopLeftRadius: 10,
+              zIndex: 10,
+              pointerEvents: "none",
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              top: 12,
+              right: 12,
+              width: 28,
+              height: 28,
+              borderTop: "3.5px solid #06B6D4",
+              borderRight: "3.5px solid #06B6D4",
+              borderTopRightRadius: 10,
+              zIndex: 10,
+              pointerEvents: "none",
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              bottom: 12,
+              left: 12,
+              width: 28,
+              height: 28,
+              borderBottom: "3.5px solid #06B6D4",
+              borderLeft: "3.5px solid #06B6D4",
+              borderBottomLeftRadius: 10,
+              zIndex: 10,
+              pointerEvents: "none",
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              bottom: 12,
+              right: 12,
+              width: 28,
+              height: 28,
+              borderBottom: "3.5px solid #06B6D4",
+              borderRight: "3.5px solid #06B6D4",
+              borderBottomRightRadius: 10,
+              zIndex: 10,
+              pointerEvents: "none",
+            }}
+          />
+
+          {/* Animated Laser (Cyan-Purple gradient scan beam) */}
+          <div
+            className="scanner-laser"
+            style={{ zIndex: 10, pointerEvents: "none" }}
           />
 
           {/* Fallback Display if Camera is not actively streaming */}
@@ -250,40 +557,105 @@ export function ScanAndPayScreen({ onBack, onSelectRecipient }) {
                 alignItems: "center",
                 justifyContent: "center",
                 gap: "4px",
+                zIndex: 3,
               }}
             >
               <QrCode size={100} color="#0F172A" />
-              <span style={{ fontSize: "9px", color: "#64748B", fontWeight: "700" }}>
-                {isProcessing ? t("scan_processing", "Scanning...") : "UPI QR READY"}
+              <span
+                style={{
+                  fontSize: "9px",
+                  color: "#64748B",
+                  fontWeight: "700",
+                }}
+              >
+                {isProcessing
+                  ? t("scan_processing", "Opening Camera...")
+                  : "UPI QR READY"}
               </span>
             </div>
           )}
         </div>
 
-        {/* Camera Error Alert */}
+        {/* Camera Error Alert with Actionable Recovery */}
         {cameraError && (
           <div
             style={{
               width: "100%",
               maxWidth: "340px",
-              padding: "10px 14px",
+              padding: "12px 14px",
               background: "rgba(239, 68, 68, 0.15)",
               border: "1px solid rgba(239, 68, 68, 0.35)",
               borderRadius: "14px",
               color: "#FCA5A5",
               fontSize: "12px",
               display: "flex",
-              alignItems: "center",
+              flexDirection: "column",
               gap: "8px",
             }}
           >
-            <AlertCircle size={16} color="#EF4444" style={{ flexShrink: 0 }} />
-            <span>{cameraError}</span>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <AlertCircle
+                size={16}
+                color="#EF4444"
+                style={{ flexShrink: 0 }}
+              />
+              <span style={{ lineHeight: "1.4" }}>{cameraError}</span>
+            </div>
+
+            <div style={{ display: "flex", gap: "8px", marginTop: "2px" }}>
+              <button
+                type="button"
+                onClick={() => startCamera(facingMode)}
+                style={{
+                  padding: "6px 12px",
+                  background: "rgba(239, 68, 68, 0.25)",
+                  border: "1px solid rgba(239, 68, 68, 0.4)",
+                  borderRadius: "8px",
+                  color: "#FFFFFF",
+                  fontSize: "11px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                }}
+              >
+                Try Again
+              </button>
+
+              {cameraErrorType === "permission" &&
+                window.AndroidCameraBridge?.openAppSettings && (
+                  <button
+                    type="button"
+                    onClick={() => window.AndroidCameraBridge.openAppSettings()}
+                    style={{
+                      padding: "6px 12px",
+                      background: "rgba(6, 182, 212, 0.2)",
+                      border: "1px solid rgba(6, 182, 212, 0.4)",
+                      borderRadius: "8px",
+                      color: "#67E8F9",
+                      fontSize: "11px",
+                      fontWeight: "600",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                    }}
+                  >
+                    <Settings size={12} />
+                    <span>App Settings</span>
+                  </button>
+                )}
+            </div>
           </div>
         )}
 
         {/* Primary Camera & Gallery Scan Controls */}
-        <div style={{ display: "flex", gap: "10px", width: "100%", maxWidth: "340px" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: "10px",
+            width: "100%",
+            maxWidth: "340px",
+          }}
+        >
           {!isCameraActive ? (
             <button
               className="btn-accent"
@@ -299,7 +671,11 @@ export function ScanAndPayScreen({ onBack, onSelectRecipient }) {
               }}
             >
               <Camera size={16} />
-              <span>{isProcessing ? "Starting Camera..." : t("scan_open_camera", "Open Camera Scanner")}</span>
+              <span>
+                {isProcessing
+                  ? "Starting Camera..."
+                  : t("scan_open_camera", "Open Camera Scanner")}
+              </span>
             </button>
           ) : (
             <>
@@ -319,17 +695,37 @@ export function ScanAndPayScreen({ onBack, onSelectRecipient }) {
                 <X size={15} />
                 <span>{t("scan_close_camera", "Close Camera")}</span>
               </button>
+
               <button
                 className="icon-btn"
-                onClick={handleSwitchCamera}
-                title="Switch Camera Front/Back"
+                onClick={handleRefreshCamera}
+                title="Refresh Camera"
                 style={{
                   background: "rgba(255, 255, 255, 0.1)",
                   border: "1px solid rgba(255, 255, 255, 0.2)",
                   color: "#06B6D4",
+                  padding: "12px",
+                  borderRadius: "14px",
+                  cursor: "pointer",
                 }}
               >
                 <RefreshCw size={16} />
+              </button>
+
+              <button
+                className="icon-btn"
+                onClick={handleSwitchCamera}
+                title="Switch Camera (Rear/Front)"
+                style={{
+                  background: "rgba(255, 255, 255, 0.1)",
+                  border: "1px solid rgba(255, 255, 255, 0.2)",
+                  color: "#A855F7",
+                  padding: "12px",
+                  borderRadius: "14px",
+                  cursor: "pointer",
+                }}
+              >
+                <SwitchCamera size={16} />
               </button>
             </>
           )}
