@@ -18,6 +18,7 @@ import { Header } from "../components/Header";
 import { parseUpiQr } from "../services/upiParser";
 import { useLanguage } from "../context/LanguageContext";
 import { KNOWN_RECIPIENTS } from "../data/sampleTransactions";
+import { registerBackHandler } from "../services/backHandler";
 
 export function ScanAndPayScreen({ onBack, onSelectRecipient }) {
   const { t } = useLanguage();
@@ -90,6 +91,21 @@ export function ScanAndPayScreen({ onBack, onSelectRecipient }) {
       stopCamera();
     };
   }, [stopCamera]);
+
+  // Intercept Android Back and in-app back: close modal first, then close camera, then screen back
+  useEffect(() => {
+    return registerBackHandler(() => {
+      if (decodedData) {
+        setDecodedData(null);
+        return true;
+      }
+      if (isCameraActive) {
+        stopCamera();
+        return true;
+      }
+      return false;
+    });
+  }, [decodedData, isCameraActive, stopCamera]);
 
   const handleQrDecoded = useCallback(
     (rawText) => {
@@ -429,6 +445,14 @@ export function ScanAndPayScreen({ onBack, onSelectRecipient }) {
         subtitle={t("scan_subtitle", "Secure • Fast • UPI")}
         showBack={true}
         onBack={() => {
+          if (decodedData) {
+            setDecodedData(null);
+            return;
+          }
+          if (isCameraActive) {
+            stopCamera();
+            return;
+          }
           stopCamera();
           onBack();
         }}

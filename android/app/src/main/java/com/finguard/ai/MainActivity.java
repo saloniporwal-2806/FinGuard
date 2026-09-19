@@ -75,7 +75,38 @@ public class MainActivity extends BridgeActivity {
                         e.printStackTrace();
                     }
                 }
+
+                @JavascriptInterface
+                public void exitApp() {
+                    runOnUiThread(() -> {
+                        finish();
+                    });
+                }
             }, "AndroidCameraBridge");
+
+            // Register Android Hardware Back Button Callback
+            getOnBackPressedDispatcher().addCallback(this, new androidx.activity.OnBackPressedCallback(true) {
+                @Override
+                public void handleOnBackPressed() {
+                    WebView wv = getBridge().getWebView();
+                    if (wv != null) {
+                        wv.evaluateJavascript(
+                            "(function() { if (typeof window.handleAndroidBack === 'function') { return window.handleAndroidBack(); } return false; })()",
+                            value -> {
+                                if ("false".equals(value) || "null".equals(value)) {
+                                    runOnUiThread(() -> {
+                                        setEnabled(false);
+                                        getOnBackPressedDispatcher().onBackPressed();
+                                    });
+                                }
+                            }
+                        );
+                    } else {
+                        setEnabled(false);
+                        getOnBackPressedDispatcher().onBackPressed();
+                    }
+                }
+            });
 
             // Custom BridgeWebChromeClient to guarantee camera permission handling in WebView
             webView.setWebChromeClient(new BridgeWebChromeClient(getBridge()) {

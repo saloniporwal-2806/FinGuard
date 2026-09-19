@@ -22,6 +22,7 @@ import { Header } from "../components/Header";
 import { StorageService } from "../services/storageService";
 import { AuthService } from "../services/authService";
 import { useLanguage } from "../context/LanguageContext";
+import { registerBackHandler } from "../services/backHandler";
 
 export function ProfileSettingsScreen({
   currentUser,
@@ -40,6 +41,21 @@ export function ProfileSettingsScreen({
   const [editAvatar, setEditAvatar] = useState(currentUser?.avatar || null);
   const [editError, setEditError] = useState("");
   const [editSuccess, setEditSuccess] = useState(false);
+
+  // Handle Back button: close open modals first
+  React.useEffect(() => {
+    return registerBackHandler(() => {
+      if (showLanguageModal) {
+        setShowLanguageModal(false);
+        return true;
+      }
+      if (isEditing) {
+        setIsEditing(false);
+        return true;
+      }
+      return false;
+    });
+  }, [showLanguageModal, isEditing]);
 
   const getInitials = (name) => {
     if (!name) return "FG";
@@ -173,7 +189,21 @@ export function ProfileSettingsScreen({
         title="Profile & Settings"
         subtitle="Manage your personal credentials and safety settings"
         showBack={true}
-        onBack={onBack || (() => onNavigate("dashboard"))}
+        onBack={() => {
+          if (showLanguageModal) {
+            setShowLanguageModal(false);
+            return;
+          }
+          if (isEditing) {
+            setIsEditing(false);
+            return;
+          }
+          if (onBack) {
+            onBack();
+          } else {
+            onNavigate("dashboard");
+          }
+        }}
       />
 
       <div className="screen-content" style={{ flex: 1, padding: "16px 20px 84px 20px" }}>

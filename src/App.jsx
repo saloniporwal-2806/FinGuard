@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Smartphone, Monitor, ShieldCheck, AlertTriangle, ShieldAlert } from "lucide-react";
+import { App as CapApp } from "@capacitor/app";
+import { triggerBack } from "./services/backHandler";
 import { DEMO_CASES } from "./data/demoCases";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { SplashScreen } from "./screens/SplashScreen";
@@ -50,23 +52,90 @@ export default function App() {
     setSafetyScore(StorageService.getSafetyScore());
   }, [scans]);
 
-  const navigateTo = (screen, params = null) => {
-    if (params) setScreenParams(params);
-    setScreenStack((prev) => [...prev, screen]);
-    setCurrentScreen(screen);
-  };
+  const handleBack = useCallback(() => {
+    // 1. Check if any active modal/camera/sub-component handled back
+    if (triggerBack()) {
+      return true;
+    }
 
-  const handleBack = () => {
+    // 2. Check if screenStack has more than 1 screen to pop
     if (screenStack.length > 1) {
       const newStack = [...screenStack];
       newStack.pop();
       const prevScreen = newStack[newStack.length - 1];
       setScreenStack(newStack);
       setCurrentScreen(prevScreen);
-    } else {
-      setCurrentScreen("dashboard");
+      return true;
     }
-  };
+
+    // 3. If currently on a non-dashboard screen, return to dashboard
+    if (currentScreen !== "dashboard" && currentScreen !== "auth" && currentScreen !== "splash") {
+      setCurrentScreen("dashboard");
+      setScreenStack(["dashboard"]);
+      return true;
+    }
+
+    // 4. On root dashboard with no previous screens: return false to allow app exit
+    return false;
+  }, [screenStack, currentScreen]);
+
+  const navigateTo = useCallback(
+    (screen, params = null) => {
+      if (params) setScreenParams(params);
+      setScreenStack((prev) => [...prev, screen]);
+      setCurrentScreen(screen);
+      try {
+        window.history.pushState({ screen, depth: screenStack.length + 1 }, "");
+      } catch (e) {}
+    },
+    [screenStack.length]
+  );
+
+  // Global Android Hardware Back Button + PopState + Capacitor listeners
+  useEffect(() => {
+    window.handleAndroidBack = () => {
+      return handleBack();
+    };
+
+    const onPopState = () => {
+      const handled = handleBack();
+      if (handled) {
+        try {
+          window.history.pushState({ screen: currentScreen }, "");
+        } catch (e) {}
+      } else {
+        if (window.AndroidCameraBridge?.exitApp) {
+          window.AndroidCameraBridge.exitApp();
+        }
+      }
+    };
+    window.addEventListener("popstate", onPopState);
+
+    let removeListener;
+    try {
+      CapApp.addListener("backButton", () => {
+        const handled = handleBack();
+        if (!handled) {
+          if (window.AndroidCameraBridge?.exitApp) {
+            window.AndroidCameraBridge.exitApp();
+          } else {
+            CapApp.exitApp();
+          }
+        }
+      })
+        .then((handle) => {
+          removeListener = handle;
+        })
+        .catch(() => {});
+    } catch (e) {}
+
+    return () => {
+      window.removeEventListener("popstate", onPopState);
+      if (removeListener && typeof removeListener.remove === "function") {
+        removeListener.remove();
+      }
+    };
+  }, [handleBack, currentScreen]);
 
   // Perform AI Risk Evaluation
   const handlePerformAnalysis = (inputData) => {
@@ -390,7 +459,7 @@ export default function App() {
             <MiniQuizScreen
               topic={getTopicFromParams()}
               onQuizComplete={handleQuizComplete}
-              onBack={() => navigateTo("learn-hub")}
+              onBack={handleBack}
             />
           )}
 
@@ -430,8 +499,16 @@ export default function App() {
           <BottomNav
             currentScreen={currentScreen}
             onNavigate={(screen) => {
+              if (screen === currentScreen) return;
               setCurrentScreen(screen);
-              setScreenStack(["dashboard", screen]);
+              if (screen === "dashboard") {
+                setScreenStack(["dashboard"]);
+              } else {
+                setScreenStack(["dashboard", screen]);
+              }
+              try {
+                window.history.pushState({ screen, depth: screen === "dashboard" ? 1 : 2 }, "");
+              } catch (e) {}
             }}
           />
         )}
